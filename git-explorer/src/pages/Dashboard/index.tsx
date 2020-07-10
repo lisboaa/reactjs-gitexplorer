@@ -16,7 +16,19 @@ interface RepositoryDTO {
 const Dashboard: React.FC = () => {
   const [newRepo, setNewRepo] = useState('');
   const [inputError, setInputError] = useState('');
-  const [repositories, setRepositories] = useState<RepositoryDTO[]>([]);
+  const [repositories, setRepositories] = useState<RepositoryDTO[]>(() => {
+    const storagedRepositories = localStorage.getItem('@GithubExplorer:repositories');
+
+    if(storagedRepositories) {
+      return JSON.parse(storagedRepositories);
+    } else {
+      return [];
+    }
+  });
+
+    useEffect(() => {
+      localStorage.setItem('@GithubExplorer:repositories', JSON.stringify(repositories),);
+    }, [repositories]);
 
     async function handleAddRepository(
       event: FormEvent<HTMLFormElement>,
