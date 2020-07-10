@@ -1,7 +1,7 @@
 import React, { useEffect, useState, FormEvent } from 'react';
 import logoImg from '../../assets/header-git-hub.svg';
 import api from '../../service/api';
-import { Title, Form, Repositories } from './style';
+import { Title, Form, Repositories, Error } from './style';
 import { FiChevronRight } from 'react-icons/fi';
 
 interface RepositoryDTO {
@@ -15,6 +15,7 @@ interface RepositoryDTO {
 
 const Dashboard: React.FC = () => {
   const [newRepo, setNewRepo] = useState('');
+  const [inputError, setInputError] = useState('');
   const [repositories, setRepositories] = useState<RepositoryDTO[]>([]);
 
     async function handleAddRepository(
@@ -22,11 +23,22 @@ const Dashboard: React.FC = () => {
     ): Promise<void> {
       event.preventDefault();
 
-      const response = await api.get<RepositoryDTO>(`repos/${newRepo}`);
+      if(!newRepo) {
+        setInputError('Digite o usuario/nome do repositório');
+        return;
+      }
 
-      const repository = response.data;
+      try {
+        const response = await api.get<RepositoryDTO>(`repos/${newRepo}`);
 
-      setRepositories([...repositories, repository]);
+        const repository = response.data;
+
+        setRepositories([...repositories, repository]);
+        setNewRepo('');
+        setInputError('');
+      } catch(err) {
+        setInputError('Erro na busca por esse repositório');
+      }
 
     }
   return (
@@ -34,7 +46,7 @@ const Dashboard: React.FC = () => {
     <img src={logoImg} alt="Logo git Hub."/>
     <Title>Explore repositórios no GitHub</Title>
 
-    <Form onSubmit={handleAddRepository}>
+    <Form hasError={!!inputError} onSubmit={handleAddRepository}>
       <input
       value={newRepo}
       onChange={(e) => setNewRepo(e.target.value)}
@@ -43,6 +55,7 @@ const Dashboard: React.FC = () => {
       <button type="submit">Pesquisar</button>
     </Form>
 
+  { inputError && <Error>{inputError}</Error> }
     <Repositories>
       {repositories.map(repository => (
         <a href="teste" key={repository.full_name}>
