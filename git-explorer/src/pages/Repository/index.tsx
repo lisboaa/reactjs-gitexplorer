@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouteMatch, Link } from 'react-router-dom';
 import { Header, RepositoryInfo, Issues } from './styled';
 import { FiChevronLeft, FiChevronRight} from 'react-icons/fi';
@@ -10,15 +10,42 @@ interface RepositoryParams {
   repository: string;
 }
 
+interface Repository {
+  full_name: string;
+  description: string;
+  stargazers__count: number;
+  forks_count: number;
+  open_issues_count: number;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
+interface Issue {
+  id: number;
+  html_url: string;
+  title: string;
+  user: {
+    login: string;
+  }
+}
+
 const Repository: React.FC = () => {
+  const [repository, setRepository] = useState<Repository | null>(null);
+  const [issues, setIssues] = useState<Issue[]>([]);
+
   const { params } = useRouteMatch<RepositoryParams>();
 
   useEffect(() => {
     api.get(`repos/${params.repository}`).then((response) => {
-      console.log(response.data);
+      setRepository(response.data);
+    });
 
-    })
-  }, [params.repository]);
+    api.get(`repos/${params.repository}/issues`).then((response) => {
+      setIssues(response.data);
+    });
+  }, [params.repository, repository]);
 return (
   <>
   <Header>
@@ -29,39 +56,42 @@ return (
     </Link>
   </Header>
 
-  <RepositoryInfo>
+  {repository && (
+    <RepositoryInfo>
     <header>
-      <img src="https://avatars2.githubusercontent.com/u/36475975?s=460&u=bc6ff76fe3466b2700370db9e1c9a7cdcd5d741f&v=4" alt="Logo github"/>
+      <img src={repository.owner.avatar_url} alt={repository.owner.login}/>
       <div>
-        <strong>rocketseat/unform</strong>
-        <p>Descrição do repositório</p>
+        <strong>{repository.full_name}</strong>
+        <p>{repository.description}</p>
       </div>
     </header>
     <ul>
       <li>
-        <strong>1800</strong>
+        <strong>{repository.stargazers__count}</strong>
         <span>Stars</span>
       </li>
       <li>
-        <strong>48</strong>
+        <strong>{repository.forks_count}</strong>
         <span>Forks</span>
       </li>
       <li>
-        <strong>67</strong>
+        <strong>{repository.open_issues_count}</strong>
         <span>Issues abertas</span>
       </li>
     </ul>
   </RepositoryInfo>
+  )}
 
   <Issues>
-    <Link to="/">
-      <div>
-        <strong>rocketseat/unform</strong>
-        <p>Descrição do repositório</p>
-      </div>
-
-      <FiChevronRight size={20}/>
-    </Link>
+  {issues.map((issue) => (
+      <a key={issue.id} href={issue.html_url}>
+        <div>
+          <strong>{issue.title}</strong>
+          <p>{issue.user.login}</p>
+        </div>
+        <FiChevronRight size={20}/>
+      </a>
+    ))}
   </Issues>
   </>
   )
